@@ -1,0 +1,21 @@
+# RTL Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/fir.sv"
+    - "src/EECS151.sv"
+    - "src/addertree.sv"
+    - "src/fir_tb.sv"
+  timescale: "1ns/10ps"
+  options:
+    - "-notice"
+    - "-line"
+    - "+lint=all,noVCDE"
+    - "+v2k"
+    - "-sverilog"
+    - "-debug_access+all"
+    - "-kdb"
+  top_module: "fir"
+  tb_name: "fir_tb"
+  defines:
+    - "CLOCK_PERIOD=1.00"
+  defines_meta: append
