@@ -8,7 +8,7 @@ module fir_tb();
     logic signed [15:0] Out;
     logic               clk, rst;
 
-    integer i = 0;
+    integer error_count = 0;
 
     initial clk = 0;
     always #(`CLOCK_PERIOD/2) clk <= ~clk;
@@ -21,17 +21,17 @@ module fir_tb();
     );
 
     initial begin
-        $vcdpluson;
-        rst <= 1'b1;
+        $fsdbDumpvars;
+        rst = 1'b1;
+        In = 4'd0;
         @(negedge clk) rst <= 1'b0;
-        In <= 4'd0;
         @(negedge clk) In <= 4'd1;
         @(negedge clk) In <= 4'd0;
         repeat (5) @(negedge clk);
         @(negedge clk) In <= 4'hF;
         repeat (5) @(negedge clk);
         @(negedge clk) In <= 4'd4;
-        @(negedge clk) In <= 4'd16;
+        @(negedge clk) In <= 4'd0; // four-bit 16 truncates to zero
         @(negedge clk) In <= 4'd4;
         @(negedge clk) In <= 4'd1;
         @(negedge clk) In <= 4'd0;
@@ -41,14 +41,16 @@ module fir_tb();
         @(negedge clk) In <= 4'd11;
         @(negedge clk) In <= 4'd12;
         @(negedge clk) In <= 4'd13;
-        @(negedge clk) In <= 4'd14;
-        @(negedge clk) In <= 4'd15;
-        $vcdplusoff;
+        @(negedge clk);
+        #1ps;
+        if (error_count != 0)
+            $fatal(1, "FIR test failed with %0d mismatches", error_count);
+        $display("[ passed ] FIR: 26 samples");
         $finish;
     end
 
     logic [4:0] index_counter;
-    initial index_counter = -1;
+    initial index_counter = 0;
 
     logic signed [15:0] Out_correct;
     logic signed [15:0] Out_correct_array [25:0];
@@ -83,8 +85,12 @@ module fir_tb();
     assign Out_correct = Out_correct_array[index_counter];
 
     always @(negedge clk) begin
+      if ($time > 0 && index_counter < 26) begin
         $display($time, ": Out should be %d, got %d", Out_correct, Out);
+        if ((index_counter < 26) && (Out !== Out_correct))
+            error_count = error_count + 1;
         index_counter <= index_counter + 1;
+      end
     end
 
 endmodule
