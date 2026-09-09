@@ -69,7 +69,7 @@ lvs.pegasus.version: "221"
 
 # VCS options
 vlsi.core.sim_tool: "hammer.sim.vcs"
-sim.vcs.version: "P-2019.06"
+sim.vcs.version: "Y-2026.03-SP1"
 
 # Voltus options
 vlsi.core.power_tool: "hammer.power.voltus"
