@@ -1,0 +1,19 @@
+# RTL Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/gcd.sv"
+    - "src/gcd_datapath.sv"
+    - "src/gcd_control.sv"
+    - "src/gcd_testbench.sv"
+    - "src/EECS151.sv"
+  timescale: "1ns/10ps"
+  options:
+    - "-notice"
+    - "+lint=all"
+    - "-sverilog"
+    - "-debug_access+all"
+    - "-kdb"
+  top_module: "gcd_testbench"
+  tb_name: "gcd_testbench"
+  defines: 
+    - "CLOCK_PERIOD=20.00000"

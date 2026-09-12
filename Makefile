@@ -16,10 +16,15 @@ OBJ_DIR             ?= $(vlsi_dir)/build
 ENV_YML             ?= $(vlsi_dir)/inst-env.yml
 TECH_CONF           ?= $(vlsi_dir)/sky130.yml
 
-DESIGN_CONF     	?= $(vlsi_dir)/design.yml
-SIM_RTL_CONF    	?= $(vlsi_dir)/sim-rtl.yml
-SIM_GL_SYN_CONF 	?= $(vlsi_dir)/sim-gl-syn.yml
-SIM_GL_PAR_CONF 	?= $(vlsi_dir)/sim-gl-par.yml
+# Lab 2 carries two designs, so every config is named after the design it drives:
+#   design-<design>.yml      synthesis constraints
+#   sim-rtl-<design>.yml     behavioral (RTL) simulation
+#   sim-gl-syn-<design>.yml  post-synthesis gate-level simulation
+# Select the design or simulation configuration explicitly on the make command line.
+DESIGN_CONF     	?= $(vlsi_dir)/design-gcd-coprocessor.yml
+SIM_RTL_CONF    	?= $(vlsi_dir)/sim-rtl-fir.yml
+SIM_GL_SYN_CONF 	?= $(vlsi_dir)/sim-gl-syn-gcd-coprocessor.yml
+SIM_GL_PAR_CONF 	?= $(vlsi_dir)/sim-gl-par-gcd-coprocessor.yml
 
 SRAM_CONF           ?= $(OBJ_DIR)/sram_generator-output.json
 OUTPUT_SYN_DB       ?= $(OBJ_DIR)/syn-rundir/syn-output-full.json
@@ -33,26 +38,6 @@ OUTPUT_SIM_DB		?= $(OBJ_DIR)/sim-rundir/sim-output-full.json
 INPUT_PWR_SIM_GL_DB ?= $(OBJ_DIR)/sim-to-power_input.json
 INPUT_PWR_PAR_DB    ?= $(OBJ_DIR)/par-to-power_input.json
 HAMMER_EXEC         ?= hammer-vlsi
-
-#########################################################################################
-# Verdi / FSDB settings
-#########################################################################################
-# vpd2fsdb converts VPD (from $vcdpluson) into FSDB (for Verdi)
-VPD2FSDB ?= /share/instsww/synopsys-new/verdi/T-2022.06-SP2/bin/vpd2fsdb
-SIM_RUNDIR := $(OBJ_DIR)/sim-rundir
-
-# helper: convert newest VPD in sim-rundir to FSDB
-define CONVERT_LATEST_VPD_TO_FSDB
-	@vpd="$$(ls -t $(SIM_RUNDIR)/*.vpd 2>/dev/null | head -n 1)"; \
-	if [ -z "$$vpd" ]; then \
-	  echo "ERROR: No .vpd found in $(SIM_RUNDIR). Your testbench should call \$vcdpluson; (it does) and the sim must run to completion."; \
-	  echo "If this still fails, check sim logs in $(SIM_RUNDIR)."; \
-	  exit 1; \
-	fi; \
-	fsdb="$${vpd%.vpd}.fsdb"; \
-	"$(VPD2FSDB)" "$$vpd" -o "$$fsdb"; \
-	echo "FSDB generated: $$fsdb"
-endef
 
 #########################################################################################
 # general rules
@@ -83,7 +68,6 @@ MAKE = make
 .PHONY: sim-rtl
 sim-rtl: $(HAMMER_D_MK)
 	$(HAMMER_EXEC) -e $(ENV_YML) -p $(TECH_CONF) -p $(SIM_RTL_CONF) --obj_dir $(OBJ_DIR) sim
-	$(CONVERT_LATEST_VPD_TO_FSDB)
 
 #########################################################################################
 # Post-Synthesis Gate Level Sim
@@ -92,7 +76,6 @@ sim-rtl: $(HAMMER_D_MK)
 .PHONY: sim-gl-syn
 sim-gl-syn: $(HAMMER_D_MK) $(INPUT_SIM_GL_SYN_DB)
 	$(HAMMER_EXEC) -e $(ENV_YML) -p $(TECH_CONF) -p $(SIM_GL_SYN_CONF) -p $(INPUT_SIM_GL_SYN_DB) --obj_dir $(OBJ_DIR) sim
-	$(CONVERT_LATEST_VPD_TO_FSDB)
 
 #########################################################################################
 # Post-PAR Gate Level Sim
@@ -101,7 +84,6 @@ sim-gl-syn: $(HAMMER_D_MK) $(INPUT_SIM_GL_SYN_DB)
 .PHONY: sim-gl-par
 sim-gl-par: $(HAMMER_D_MK) $(INPUT_SIM_GL_PAR_DB)
 	$(HAMMER_EXEC) -e $(ENV_YML) -p $(TECH_CONF) -p $(SIM_GL_PAR_CONF) -p $(INPUT_SIM_GL_PAR_DB) --obj_dir $(OBJ_DIR) sim
-	$(CONVERT_LATEST_VPD_TO_FSDB)
 
 #########################################################################################
 # Standalone Power Estimation
@@ -242,6 +224,9 @@ clean:
 	rm -rf \
 	  $(HAMMER_D_MK) \
 	  $(OBJ_DIR)/sim-rundir \
+	  $(OBJ_DIR)/sim-rtl-rundir \
+	  $(OBJ_DIR)/sim-syn-rundir \
+	  $(OBJ_DIR)/sim-par-rundir \
 	  $(OBJ_DIR)/syn-rundir \
 	  $(OBJ_DIR)/par-rundir \
 	  $(OBJ_DIR)/drc-rundir \

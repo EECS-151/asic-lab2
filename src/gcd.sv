@@ -1,0 +1,75 @@
+`default_nettype none
+
+//=========================================================================
+// RTL Model of GCD Unit
+//-------------------------------------------------------------------------
+//
+
+// W is a parameter specifying the bit width of the module
+module gcd #(
+  parameter int W = 16
+)
+(
+  input  logic         clk,
+  input  logic         reset,
+
+  input  logic [W-1:0] operands_bits_A,
+  input  logic [W-1:0] operands_bits_B,
+  input  logic         operands_val,
+  output logic         operands_rdy,
+
+  output logic [W-1:0] result_bits_data,
+  output logic         result_val,
+  input  logic         result_rdy
+);
+
+// At this top level, hook together the
+// datapath part and control part only
+
+logic        B_mux_sel, A_en, B_en, B_zero, A_lt_B;
+logic [1:0]  A_mux_sel;
+
+// Notice W parameter is sent to the datapath
+// module as well
+gcd_datapath #(W) GCDdpath0 (
+
+  // external
+  .operands_bits_A (operands_bits_A),
+  .operands_bits_B (operands_bits_B),
+  .result_bits_data(result_bits_data),
+
+  // system
+  .clk             (clk),
+  .reset           (reset),
+
+  // internal (between ctrl and dpath)
+  .A_mux_sel       (A_mux_sel[1:0]),
+  .A_en            (A_en),
+  .B_en            (B_en),
+  .B_mux_sel       (B_mux_sel),
+  .B_zero          (B_zero),
+  .A_lt_B          (A_lt_B)
+);
+
+gcd_control GCDctrl0 (
+
+  // external
+  .operands_rdy (operands_rdy),
+  .operands_val (operands_val),
+  .result_rdy   (result_rdy),
+  .result_val   (result_val),
+
+  // system
+  .clk          (clk),
+  .reset        (reset),
+
+  // internal (between ctrl and dpath)
+  .B_zero       (B_zero),
+  .A_lt_B       (A_lt_B),
+  .A_mux_sel    (A_mux_sel[1:0]),
+  .A_en         (A_en),
+  .B_en         (B_en),
+  .B_mux_sel    (B_mux_sel)
+);
+
+endmodule

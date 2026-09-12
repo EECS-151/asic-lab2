@@ -1,0 +1,20 @@
+# RTL Simulation Variables
+sim.inputs:
+  input_files:
+    - "src/gcd_coprocessor.sv"
+    - "src/gcd_datapath.sv"
+    - "src/gcd_control.sv"
+    - "src/fifo.sv"
+    - "src/gcd_coprocessor_testbench.sv"
+    - "src/EECS151.sv"
+  timescale: "1ns/10ps"
+  options:
+    - "-notice"
+    - "+lint=all"
+    - "-sverilog"
+    - "-debug_access+all"
+    - "-kdb"
+  top_module: "gcd_coprocessor"
+  tb_name: "gcd_coprocessor_testbench"
+  defines: 
+    - "CLOCK_PERIOD=5.00"
